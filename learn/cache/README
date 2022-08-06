@@ -1,0 +1,387 @@
+Below is an hierarchy of memory access (By processor) based on the speed.
+
+                     Processor
+                     ---------
+
+                         /\
+                        /  \ <---------------- Registers
+                       /    \
+                      --------
+                     /        \  <------------- Cache
+                    /          \
+                   --------------
+                  /              \ <------------ Main Memory
+                 /                \
+                --------------------
+               /                    \ <--------- Hard Disk.
+              /                      \
+             --------------------------
+
+Registers are very fast to access, but they can hold only few bytes of data,
+second is 'cache', which is embedded in the CPU chip. Caches are generally
+small, so we need RAM(Main memory) to store our programs while execution and
+then it is Hard disk where the program exists forever.
+
+Here, first we first need to understand the "effective memory access time" from
+the perspective of the processor.
+
+A processor may either need an instruction to execute or a data to operate on,
+and that could be present in main memory. Hence, it needs to get it to the
+registers.
+
+The processor first goes to the cache to find data on a particular address,
+and does not find it there, it is called a "Cache Miss".
+
+Miss : Element was not found at that memory level.
+Hit : Element found at the memory level.
+
+Hit Rate : percentage of time, in which, that the element was found.
+
+Miss Rate : (1 - Hit Rate), For example, if hit rate is 60% (.60), then the miss
+rate would be (1 - .60) = .40
+
+Note: The above maths of 'miss rate' is like we are getting the remaining
+quantity.
+
+Access time : Let's say that when processor tries to find data/instruction at a
+particular memory address and it finds it in the cache itself, then cache takes
+3ns(3 nanoseconds) to provide this data to the processor and if data for that
+particular address is not found in the cache, processor goes down to the main
+memory for data lookup, and main memory takes 30ns(30 nano seconds) to provide
+the data for that address.
+
+Effective access time : (hit rate * time taken by cache for each hit) +
+                        ((1 - hit rate) * time taken by main memory for hit)
+
+Note: here, we are assuming that, whatever is not found in cache, is definitely
+found in the main memory.
+
+Now, lets say that we have hit rate as : 80% (0.80).
+
+Hence, the Effective access time would be,
+
+    = (0.80 * 3ns) + ((1-0.80) * 30ns)
+    = 2.4 ns + 6 ns
+    = 8.4 ns.
+
+Here, with 80% hit rate, the effective access time is 8.4 nano seconds.
+
+Lets assume, if we can increase the hit rate to 90%, then how much will be the
+'effective access time'?
+
+   = (0.90 * 3ns) + ((1-0.90) * 30ns)
+   = 2.7 ns + 3ns
+   = 5.7ns.
+
+This just shows that if we can improve on the hit rate in cache, then the
+"Effective access time" will be improved.
+
+Question:
+--------
+
+To improve the hit rate, what data we should keep in the cache, that improves
+our hit rate, and as a result, "Effective access time" will improve.
+
+Answer:
+------
+
+The idea of "Locality of reference" comes into picture to decide, what memory
+data to keep in the cache, that improves the hit rate. Below are two
+considerations based on the experience we have faced so far with programs,
+
+    - Once a data is accessed, the same data element will be used again soon. It
+      is called "Temporal Locality".
+    - Neighbours will also be used soon. It is called "Spatial Locality".
+
+Hence, based on the above 2 observations, we can keep the data accessed and
+nearby data in the cache memory.
+
+Note : Each data which is kept in the cache memory is actually associated with
+some RAM address. Meaning, cache does not represent its own address space, and
+rather it holds a copy of data from RAM for a particular RAM addresses. Hence,
+when some data is accessed with an address, CPU needs to check whether data
+related to this RAM address is present in the cache memory or not. We will talk
+about it later, on how it is done actually.
+
+Let's now take an example to understand a use case around cache.
+Suppose in one of our C program, we have this below code to be executed.
+
+    char a[64];
+    for (int i=0; i<64; i++) {
+        a[i] = i;
+    }
+
+When these lines of code are executed, when the very first time array 'a' is
+accessed for index '0', the data related to the address (at index '0') will be
+checked in the cache memory, and CPU will not find it. It is a 'cache miss'.
+
+Now, hardware will bring this data and the nearby data in the cache. Assume that
+all the 64 bytes are brought in the cache by hardware and now, starting from
+index '1' up to index '63', we have all the data present in cache.
+
+So, effectively '98.4375%' times, CPU was able to get the data from the cache
+itself.
+
+Hence, approximate hit rate = 0.98
+and miss rate = 1 - 0.98 = 0.02
+
+Now, by the same old formula (explained above).
+
+Effective access time : (hit rate * time taken by cache for each hit) +
+                        ((1 - hit rate) * time taken by main memory for hit)
+
+Assuming that cache takes 3ns and main memory takes 30ns to provide data.
+
+Effective access time : (0.98 * 3ns) + (0.02 * 30ns)
+                      = 2.94 + 0.6
+                      = 3.54ns.
+
+Now, lets try to find how much time it would have taken for CPU, if there was
+no cache and it had to access everything from main memory.
+
+Here, hit rate (in cache) will become 0, hence, by formula,
+
+                    = (0 * 3ns) + ((1 - 0) * 30ns)
+                    = 30ns
+
+It is 10 times greater, then accessing memory from cache.
+
+Note : The above thing is applicable not only for arrays and rather for any
+memory access done.
+
+For example if I am using a variable 'a' from below code, all the nearby data
+will come in the cache.
+
+    int a, b, c;
+    a = 20; // This brings 'b' and 'c' as well in the cache.
+
+
+Question:
+--------
+How certain RAM(main memory) data is mapped in cache?
+
+Answer:
+------
+
+Copying the data from RAM to the cache is done by cache hardware. In order to
+make sure that it is done properly in hardware, we divide RAM memory in a fix
+size of virtual blocks.
+
+Each cache is divided in fix size lines. For example,
+
+  Tag                      CACHE LINE
+            ________ ________ ________ ________
+[Block id1] |       |        |        |        | Line 0 (4 bytes)
+            -------- -------- -------- --------
+[Block id2] |       |        |        |        | Line 1 (4 bytes)
+            -------- -------- -------- --------
+[Block id3] |       |        |        |        | Line 2 (4 bytes)
+            -------- -------- -------- --------
+[Block id4] |       |        |        |        | Line 3 (4 bytes)
+            -------- -------- -------- --------
+[Block id5] |       |        |        |        | Line 4 (4 bytes)
+            -------- -------- -------- --------
+[Block id6] |       |        |        |        | Line 5 (4 bytes)
+            -------- -------- -------- --------
+            |                                  |
+            |                                  |
+           \|/                                \|/
+
+Here, in the above example, each line has capacity to hold 4 bytes. Hence, our
+RAM has to be divided in blocks of memory where each block is of size 4 bytes.
+
+Let's assume that we have this 32 bit address in RAM : 0x12345678
+
+Now, we should divide this address in such a way that first half of the address
+represents 4 bytes of memory, called block.
+
+We know that, to represent 4 bytes addresses in memory, we just need 2 bits of
+the address as below:
+
+                         /|\                               |      /|\     |
+                          |                                |       |      |
+                                                           ----------------
+    0001 0010 0011 0100 0101 0110 0111 0110 (0x12345676)   |    DATA1     |
+                                                           ----------------
+    0001 0010 0011 0100 0101 0110 0111 0111 (0x12345677)   |    DATA2     |
+                                                           ----------------
+    0001 0010 0011 0100 0101 0110 0111 1000 (0x12345678)   |    DATA3     |
+                                                           ----------------
+    0001 0010 0011 0100 0101 0110 0111 1001 (0x12345679)   |    DATA4     |
+                                                           ----------------
+    0001 0010 0011 0100 0101 0110 0111 1010 (0x1234568A)   |    DATA5     |
+                                                           ----------------
+    0001 0010 0011 0100 0101 0110 0111 1011 (0x1234567B)   |    DATA6     |
+                                                           ----------------
+    0001 0010 0011 0100 0101 0110 0111 1100 (0x1234568C)   |    DATA7     |
+                                                           ----------------
+                          |                                |       |      |
+                         \|/                               |      \|/     |
+
+Above, left size we have mentioned the address of each byte in RAM, and right
+size is represented as the actual RAM.
+
+Now, since our cache has size of only 4 bytes, then which 4 bytes in RAM, do we
+consider as a block and copy in the cache.
+
+It's easy. As 4 bytes of address range can be represented with just 2 bits in
+the address, we just need to take the first 30 bits as block address (Block id),
+and remaining 2 bits can be used to get a specific byte from the block.
+
+For example, here, take this address (0x1234567A),
+
+    0001 0010 0011 0100 0101 0110 0111 10 10
+   |<----------------------------------->|
+
+Here, first 30 bits are taken as block address, and last all (2 bits), make them
+0 as below:
+
+    0001 0010 0011 0100 0101 0110 0111 10 00
+   |<----------------------------------->|
+
+This 30-bit address is '0x12345678'. Hence, '0x12345678' is the block ID and
+the 4 bytes of data, which is related to this 30-bit block address, will be
+copied in cache from RAM in one of cache line and that cache line address
+(Block id) will be '0x12345678'.
+
+                                                           ----------------
+    0001 0010 0011 0100 0101 0110 0111 1000 (0x12345678)   |    DATA3     |
+                                                           ----------------
+    0001 0010 0011 0100 0101 0110 0111 1001 (0x12345679)   |    DATA4     |
+                                                           ----------------
+    0001 0010 0011 0100 0101 0110 0111 1010 (0x1234568A)   |    DATA5     |
+                                                           ----------------
+    0001 0010 0011 0100 0101 0110 0111 1011 (0x1234567B)   |    DATA6     |
+                                                           ----------------
+
+Here, note that the first 30 bits are same, only the last 2 bits are different.
+Hardware will now copy the 4 bytes of data for this block id (0x12345678), as
+below.
+
+               00       01       10       11
+            ________ ________ ________ ________
+[0x12345678]| DATA3 | DATA4  | DATA5  | DATA6  | Line 0 (4 bytes)
+            -------- -------- -------- --------
+[Block id2] |       |        |        |        | Line 1 (4 bytes)
+            -------- -------- -------- --------
+[Block id3] |       |        |        |        | Line 2 (4 bytes)
+            -------- -------- -------- --------
+[Block id4] |       |        |        |        | Line 3 (4 bytes)
+            -------- -------- -------- --------
+[Block id5] |       |        |        |        | Line 4 (4 bytes)
+            -------- -------- -------- --------
+[Block id6] |       |        |        |        | Line 5 (4 bytes)
+            -------- -------- -------- --------
+            |                                  |
+            |                                  |
+           \|/                                \|/
+
+The above (on the top of this cache) mentioned 2 bits are called "Word id".
+
+In summary, execution of a program is like this,
+    (1) When a program is executed and an address is accessed, Processor first
+        divides the address in 2 parts, (1) Block id (first 30 bits in this
+        example), and (2) word id (last 2 bits in this example) and pass both
+        these items to the cache.
+
+    (2) Cache first checks whether it has data belonging to this block id or
+        not. If present, it is called a "cache hit" and the cache uses the
+        provided 'word id' and fetch the corresponding data and provides the
+        data to the processor. Otherwise, it is called a "cache miss". In this
+        case, cache just queries to the RAM to gets all the bytes for this block
+        id. Note that, checking for the block id in the whole cache is done in
+        parallel by the cache hardware. Hence, its very fast.
+
+Question:
+---------
+
+Suppose, Each line in a CPU cache can hold 8 bytes of data and processor wants
+to fetch the data at address "0x1265014A", in a 32-bit, byte addressable RAM.
+Show, how and what memory items will be copied from RAM to the cache.
+
+Answer:
+-------
+
+Since, each line in the CPU cache can hold up to 8 bytes, only last 3 bits of an
+address are needed to represent 8 addresses. Hence, our block id will be
+32 - 3 = 29 bits.
+
+Hence,
+        Block id : 29 bits.
+        Word id : 3 bits.
+
+To get the block id, processor will just mask the last 3 bits with 0.
+To get the word id, processor will just mask the first 29 bits with 0.
+
+     0x1265014A : 0001 0010 0110 0000 0001 0100 1010
+
+To represent last 3 bits in a block, lets take a cache mask as below:
+
+        CACHE_MASK = 0x7
+
+Here, all last 3 bits are 1.
+
+Below, we can create 2 macros to mask to the address to fetch the 'block id' and
+'word id'.
+
+#define WORD_MASK  CACHE_MASK   <---- 0000 0000 0000 0000 0000 0000 0000 0111
+#define BLOCK_MASK ~CACHE_MASK  <---- 1111 1111 1111 1111 1111 1111 1111 1000
+
+Now, block address/id is: Address    &   BLOCK_MASK
+                        : 0x1265014A &   1111 1111 1111 1111 1111 1111 1111 1000
+                        : 0x12650148
+
+So, '0x12650148' is the address from where cache hardware will take all 8 bytes
+and copy in one of the cache line.
+
+                         /|\                               |      /|\     |
+                          |                                |       |      |
+                                                           ----------------
+    0001 0010 0110 0101 0000 0001 0100 1000 (0x12650148)   |    DATA1     |
+                                                           ----------------
+    0001 0010 0110 0101 0000 0001 0100 1001 (0x12650149)   |    DATA2     |
+                                                           ----------------
+    0001 0010 0110 0101 0000 0001 0100 1010 (0x1265014A)   |    DATA3     |
+                                                           ----------------
+    0001 0010 0110 0101 0000 0001 0100 1011 (0x1265014B)   |    DATA4     |
+                                                           ----------------
+    0001 0010 0110 0101 0000 0001 0100 1100 (0x1265014C)   |    DATA5     |
+                                                           ----------------
+    0001 0010 0110 0101 0000 0001 0100 1101 (0x1265014D)   |    DATA6     |
+                                                           ----------------
+    0001 0010 0110 0101 0000 0001 0100 1110 (0x1265014E)   |    DATA7     |
+                                                           ----------------
+    0001 0010 0110 0101 0000 0001 0100 1111 (0x1265014F)   |    DATA8     |
+                                                           ----------------
+                          |                                |       |      |
+                         \|/                               |      \|/     |
+
+                      Address                                     RAM
+
+After cache hardware copies data from RAM to the cache, cache may look like
+below. It is just an example, In reality this memory block can go to any line in
+the cache depending on the replacement logic used.
+
+               00       01       10       11
+             _____ _____ _____ _____ _____ _____ _____ _____
+[0x12650148]|DATA1|DATA2|DATA3|DATA4|DATA5|DATA6|DATA7|DATA8| Line 0 (8 bytes)
+             ----- ----- ----- ----- ----- ----- ----- -----
+[ Block id ]|     |     |     |     |     |     |     |     | Line 1 (8 bytes)
+             ----- ----- ----- ----- ----- ----- ----- -----
+[ Block id ]|     |     |     |     |     |     |     |     | Line 2 (8 bytes)
+             ----- ----- ----- ----- ----- ----- ----- -----
+[ Block id ]|     |     |     |     |     |     |     |     | Line 3 (8 bytes)
+             ----- ----- ----- ----- ----- ----- ----- -----
+[ Block id ]|     |     |     |     |     |     |     |     | Line 4 (8 bytes)
+             ----- ----- ----- ----- ----- ----- ----- -----
+[ Block id ]|     |     |     |     |     |     |     |     | Line 5 (8 bytes)
+             ----- ----- ----- ----- ----- ----- ----- -----
+[ Block id ]|     |     |     |     |     |     |     |     | Line 6 (8 bytes)
+             ----- ----- ----- ----- ----- ----- ----- -----
+            |                                  |
+            |                                  |
+           \|/                                \|/
+
+Now, if any of the address in this range (0x12650148 - 0x1265014F), is accessed,
+The data is already present in the cache and processor does not need to fetch it
+from the RAM. This makes program execution faster.
