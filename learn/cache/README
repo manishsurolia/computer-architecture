@@ -385,3 +385,166 @@ the cache depending on the replacement logic used.
 Now, if any of the address in this range (0x12650148 - 0x1265014F), is accessed,
 The data is already present in the cache and processor does not need to fetch it
 from the RAM. This makes program execution faster.
+
+Types of cache memories:
+-----------------------
+
+Cache memories are majorly divided in 3 categories.
+
+(1) Fully Associative Cache
+(2) Direct Mapped Cache
+(3) Set Associative Cache
+
+Fully Associative Cache
+-----------------------
+
+'Fully Associative Cache' is fairly simple to understand. It is same as what is
+explained in the above sections. From a requested memory address, cache hardware
+just need to divide it in 2 parts, 'block id' and 'word id', get 'block id'
+related whole block from RAM and store it in any one of the cache line.
+
+Once all lines of the cache is full, and processor request for an address, for
+which block is not present in the cache, cache hardware needs to replace an old
+block line with the new one coming from RAM.
+
+There can be multiple ways of doing it,
+    - FIFO   : Replace the block that has been in the cache longest.
+    - LRU    : Replace the block that has been least recently used(not used for
+               long time).
+    - LFU    : Replace the block that has been used frequently used.
+    - Random : Replace a random block.
+
+So far, it has been observed that Random method of replacing the old block line
+in cache works must faster and cheaper, because it does not need any help from
+the hardware to maintain any data or add any time to keep track of how much time
+a block has been in the cache to be able to decide, which one to replace.
+
+Note : Lots of processor gives us option to choose between different cache line
+replacement algorithms. We can decide which one is suitable for our application
+and set that in the CPU.
+
+Benefits :
+    - Least chance of thrashing. Thrashing is like, replacing the old block and
+      then getting it back again later and again doing the same. This may really
+      affect the performance of memory access.
+
+Drawbacks :
+    - Fully associative cache is expensive. Checking all the blocks in one shot
+      for a block id, needs a lot of hardware and that makes it very expensive.
+
+
+Direct mapping cache
+--------------------
+
+In a 'Fully Associative cache', a block of memory from RAM, could be saved at
+any line in cache.
+
+In a 'Direct mapping cache', block of memory from RAM is saved at a particular
+line of cache.
+
+Finding out exact line of the cache (where data is going to be copied) is done
+with the use of address itself. This approach is also very simple and straight
+forward.
+
+Let's see how we find out exact line number from a RAM address.
+
+To understand the concept of direct mapping cache, lets draw a cache, which has
+8 lines in it.
+
+Each line in this cache is capable of holding 4 bytes of block from RAM.
+
+
+                   00       01       10       11
+                ________ ________ ________ ________
+    [TAG]       |       |        |        |        | Line 0 (000)
+                -------- -------- -------- --------
+    [TAG]       |       |        |        |        | Line 1 (001)
+                -------- -------- -------- --------
+    [TAG]       |       |        |        |        | Line 2 (010)
+                -------- -------- -------- --------
+    [TAG]       |       |        |        |        | Line 3 (011)
+                -------- -------- -------- --------
+    [TAG]       |       |        |        |        | Line 4 (100)
+                -------- -------- -------- --------
+    [TAG]       |       |        |        |        | Line 5 (101)
+                -------- -------- -------- --------
+    [TAG]       |       |        |        |        | Line 6 (110)
+                -------- -------- -------- --------
+    [TAG]       |       |        |        |        | Line 7 (111)
+                -------- -------- -------- --------
+
+Since a line here is capable of holding 4 bytes of block, the 'word id' bits
+will be last 2 bits of the address.
+
+When an address is accessed by processor, we need to choose exact line of this
+cache with the same address.
+
+Let's see how to choose exact line of the cache with the address.
+
+Suppose, CPU wants to access this address, 0xA234B64A in a 32-bit byte
+addressable RAM.
+
+The bit pattern for this address is as below,
+
+    1010 0010 0011 0100 1011 0110 0100 1010
+
+Since a line can hold 4 bytes, we have last 2 bits in this address for that.
+Hence, divide the address as below:
+
+    1010 0010 0011 0100 1011 0110 0100 10  10
+    |<---------------------------------->|<->|
+                    Block id
+
+Here the block id is : 1010 0010 0011 0100 1011 0110 0100 10 = 0xA234B648
+Hence, 4 bytes starting from RAM address '0xA234B648' has to be copied in a line
+in the cache. That is '0xA234B648 to 0xA234B64B' address.
+
+Now, to choose the exact line to copy these 4 bytes from RAM, we just use the
+last 3 bits in the block id, as below:
+
+
+    1010 0010 0011 0100 1011 0110 010 0 10  10
+    |<----------------------------------->|<->|
+                    Block id         |<-->|
+                                      Cache
+                                      Line
+                                    Selector
+                                      Bits
+                                (3 bits Line ID)
+
+The remaining bits become TAG for this line.
+Hence,
+    TAG     = 1010 0010 0011 0100 1011 0110 010 (27 bits).
+    Line ID = 010 (3 bits)
+    Word ID = 10 (2 bits).
+
+With the above divide of these three elements from a 32-bit address, our data
+always go to an exact cache line, represented by 3-bits Line ID.
+
+Also, when processor needs to find data related to an address, cache does not
+need a dedicated hardware that compares all lines of cache memory for a
+'block id', as it already knows that which line will have the block data. Just
+get the 3-bit line id from the 32-bit address, and compare the TAG (27 bit) with
+the TAG in that line, if TAG is present, then we have the block data in the
+line. Now, pass the word id to the cache to get exact byte value. If the TAG
+does not match, get the data block of RAM and copy it here in this line of
+cache.
+
+If there is another data already present there in the same line, replace that
+data with the new block of data. That's it. Its quite fast because we don't need
+to use any replacement logic here as we do in a 'Fully Associative cache'.
+
+Benefits:
+    - Its very cheap, as we don't need any extra hardware for parallel
+      comparisons.
+    - Its very fast, as cache already knows the line number, and does not need
+      to find it by comparing all the lines.
+
+Drawbacks:
+    - There are so many addresses in the RAM, which has same Line ids (3-bits in
+      this example). Hence the problem of thrashing occurs very quickly even
+      though so many line may be empty. For example, check the address
+      '0xA234B646' and '0xEA76F644'. They both have line ID bits as, '001' and
+      when the second address is fetched here, it will simply replace the first
+      one in the cache, even though we have so many lines empty in the cache.
+      This is called thrashing problem in cache.
