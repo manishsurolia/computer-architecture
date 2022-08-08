@@ -668,3 +668,12 @@ factors,
 It is also called a 'k-way set associative cache', where k is the number of
 lines we have in a set. In the above example, it is called a '2-way set
 associative cache'.
+
+References:
+----------
+
+(1) Memory Systems, by Bruce Jacob, David Wang, Spencer Ng.
+(2) https://www.youtube.com/watch?v=Bz49xnKBH_0&list=PLxfrSxK7P38X7XfG4X8Y9cdOURvC7ObMF&index=73
+(3) https://www.youtube.com/watch?v=A0vR-ks3hsQ&list=PLxfrSxK7P38X7XfG4X8Y9cdOURvC7ObMF&index=74
+(4) https://www.youtube.com/watch?v=zocwH0g-qQM&list=PLxfrSxK7P38X7XfG4X8Y9cdOURvC7ObMF&index=75
+(5) https://www.youtube.com/watch?v=gr5M9CULUZw&list=PLxfrSxK7P38X7XfG4X8Y9cdOURvC7ObMF&index=76
