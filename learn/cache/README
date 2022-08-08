@@ -669,6 +669,112 @@ It is also called a 'k-way set associative cache', where k is the number of
 lines we have in a set. In the above example, it is called a '2-way set
 associative cache'.
 
+Flags:
+-----
+
+Each line in a cache has flags associated with it.
+
+    <-  Flags ->|
+    ---------------------------------------------------------------------
+    | T | V | L | D |      TAG                 |        BLOCK DATA      |
+    ---------------------------------------------------------------------
+      |   |   |   |
+      |   |   |   |
+      |   |   |   |
+      |   |   |   |
+      |   |   |   |
+      |   |   |   |-> Dirty : Identifies a line of data that has been written
+      |   |   |               to, but not updated to the main memory.
+      |   |   |
+      |   |   |-> Lock : Lock a line of the cache to prevent replacement.
+      |   |
+      |   |-> Valid : Whether the line contains valid data/instruction or not?
+      |
+      |--> Type : Data/Instruction. (Needed because instruction memory can not
+                                     be written by programs).
+
+Note about the above bits:
+
+(1) Type : The way, we have our program execution setup in different OS, we can
+not have data and instruction both in the same block. Hence, a block will be
+either a DATA block, or an instruction block.
+
+(2) Valid : When a system boots up, all the lines in cache memory are invalid.
+Hence the flag is marked as invalid with this flag for each line in the cache
+memory. During CPU using this cache, when this line has to be marked as
+'Invalid', all block data should be copied back to the main memory first.
+
+(3) Lock : There are some pieces of code/data, which we always want to keep in
+the cache. Specially, from operating systems. Such blocks of memory are used
+very frequently until the system is up and running.
+
+(4) Dirty : When a block of memory is copied to the cache in a Line, and that
+line has been updated by processor, it is marked as Dirty line. This marking is
+very important, because when a new block has to come and replace this line, the
+old data in this line has to be copied back to the main memory.
+
+Cache write policies:
+--------------------
+
+Cache write policies are important as they can affect the performance of our
+system based on which write policy we select. There are majorly 2 types of
+cache write policies,
+    (1) Write Through : Every write to cache, also writes through to the main
+                        memory. Means, just when the cache is updated, we update
+                        the main memory as well. This policy is important when
+                        there are multiple cores, working on the same data. For
+                        example, suppose we have five threads, running on five
+                        different cores and operating the same memory location.
+                        In such situations, This policy seems good, but it has a
+                        problem that it makes the bus congested with the writes
+                        for blocks, which may not be needed immediately. There
+                        is a mechanism to handle such situations using, 'write
+                        through bus watching'.
+
+    (2) Write back : Update main memory only when a dirty line is to be
+                     replaced. It reduces the bus traffic, but again, the issue
+                     is there when multiple cores are looking for the same
+                     memory address.
+
+Cache Hierarchy:
+---------------
+
+Every CPU has a cache embedded in it. That is called L1 cache. There can be more
+than one cache, which can be shared between cores.
+
+                      ---------------------
+                      |                   |
+     ----------       | ---------------   |  ------------------
+     |        |<--------| Instruction |<--|--|                |
+     |        |<--------| Cache       |<--|--|                |
+     |        |   One | | (Split)     |   |  |  Unified       |
+     |        |   Way | --------------|   |  |   Cache        |
+     |  CPU   |       |                   |  |  (Both         |
+     |        |       | ---------------   |  |   Data         |
+     |        |<------->| Data        |<--|->|   and          |
+     |        |<------->| Cache       |<--|->|   Instructions)|
+     |        |  Two  | | (Split)     |   |  |                |
+     |        |  Ways | --------------|   |  |                |
+     ----------       |                   |  |                |
+                      ---------------------  ------------------
+                            L1 Cache            L2 Cache
+
+Unified Cache : A cache memory, which holds both instructions and data, is
+called a unified cache.
+
+Split Cache : A cache, which contains only either instructions or data.
+
+Here, in L1, we have split cache, and L2 is a unified cache.
+
+Problem with split cache: If we fix the size of a cache to be able to store
+data in one cache and instructions in another, then one cache may always be
+almost empty and another one has frequent replacements. A computer architect
+needs to decide the caches carefully for a processor based on the needs or
+the program which are supposed to be executed.
+
+A unified cache can change the ratio of data/instruction sizes in the cache, but
+with split cache we don't have that flexibility.
+
 References:
 ----------
 
@@ -677,3 +783,4 @@ References:
 (3) https://www.youtube.com/watch?v=A0vR-ks3hsQ&list=PLxfrSxK7P38X7XfG4X8Y9cdOURvC7ObMF&index=74
 (4) https://www.youtube.com/watch?v=zocwH0g-qQM&list=PLxfrSxK7P38X7XfG4X8Y9cdOURvC7ObMF&index=75
 (5) https://www.youtube.com/watch?v=gr5M9CULUZw&list=PLxfrSxK7P38X7XfG4X8Y9cdOURvC7ObMF&index=76
+(6) https://www.youtube.com/watch?v=Y7q2ECeFWE8&list=PLxfrSxK7P38X7XfG4X8Y9cdOURvC7ObMF&index=77
