@@ -548,3 +548,123 @@ Drawbacks:
       when the second address is fetched here, it will simply replace the first
       one in the cache, even though we have so many lines empty in the cache.
       This is called thrashing problem in cache.
+
+Set Associative Cache
+---------------------
+
+'Set Associative cache' address the problem of thrashing in the 'Direct mapping
+cache'.
+
+In the example given for 'Direct mapping cache', we had a cache with 8 lines,
+and we were selecting one of the line with the use of 3 bits and we had an issue
+of thrashing due to that because so many addresses have the same 3-bits.
+
+Now, to reduce the problem of thrashing with 'Direct mapping cache', we use
+only two bits to select any one of the 8 lines in the cache. This way, we have
+2 options to choose from, for each 2-bit pattern.
+
+We can understand it more with below diagram,
+
+
+                   00       01       10       11
+                ________ ________ ________ ________
+    [TAG]       |       |        |        |        | Line 0 (00)
+                -------- -------- -------- --------
+    [TAG]       |       |        |        |        | Line 1 (00)
+                -------- -------- -------- --------
+    [TAG]       |       |        |        |        | Line 2 (01)
+                -------- -------- -------- --------
+    [TAG]       |       |        |        |        | Line 3 (01)
+                -------- -------- -------- --------
+    [TAG]       |       |        |        |        | Line 4 (10)
+                -------- -------- -------- --------
+    [TAG]       |       |        |        |        | Line 5 (10)
+                -------- -------- -------- --------
+    [TAG]       |       |        |        |        | Line 6 (11)
+                -------- -------- -------- --------
+    [TAG]       |       |        |        |        | Line 7 (11)
+                -------- -------- -------- --------
+
+
+Let's see how to choose exact line of the cache with the address with the same
+old example.
+
+Suppose, CPU wants to access this address, 0xA234B64A in a 32-bit byte
+addressable RAM.
+
+The bit pattern for this address is as below,
+
+    1010 0010 0011 0100 1011 0110 0100 1010
+
+Since a line can hold 4 bytes, we have last 2 bits in this address for that.
+Hence, divide the address as below:
+
+    1010 0010 0011 0100 1011 0110 0100 10  10
+    |<---------------------------------->|<->|
+                    Block id              word
+                                           id
+
+Here the block id is : 1010 0010 0011 0100 1011 0110 0100 10 = 0xA234B648
+Hence, 4 bytes starting from RAM address '0xA234B648' has to be copied in a line
+in the cache. That is '0xA234B648 to 0xA234B64B' address.
+
+Now, to choose the exact line to copy these 4 bytes from RAM, we use only the
+last 2 bits in the block id, as below:
+
+
+    1010 0010 0011 0100 1011 0110 010 0  10  10
+    |<------------------------------------>|<->|
+                    Block id           |<->|
+                                       Cache
+                                       Line
+                                     Selector
+                                       Bits
+                                 (2 bits Line ID)
+
+The remaining bits become TAG for this line.
+Hence,
+    TAG     = 1010 0010 0011 0100 1011 0110 0100 (28 bits).
+    Line ID = 10 (2 bits)
+    Word ID = 10 (2 bits).
+
+Now, since the Line ID is '10', cache has 2 lines to store this in the
+cache. If it finds the first line empty, it just copies the whole block to the
+line. Otherwise, it checks the second line for the same line id. If second line
+is also not empty, it needs to replace one of them, and replacement algorithm
+can be any one of the used for 'Fully associative cache'.
+
+
+                                  00       01       10       11
+                               ________ ________ ________ ________
+    [TAG]                      |       |        |        |        | Line 0 (00)
+                               -------- -------- -------- --------
+    [TAG]                      |       |        |        |        | Line 1 (00)
+                               -------- -------- -------- --------
+    [TAG]                      |       |        |        |        | Line 2 (01)
+                               -------- -------- -------- --------
+    [TAG]                      |       |        |        |        | Line 3 (01)
+                               -------- -------- -------- --------
+[1010001000110100101101100100] |  2A   |   1B   |   91   |   F0   | Line 4 (10)
+                               -------- -------- -------- --------
+    [TAG]                      |       |        |        |        | Line 5 (10)
+                               -------- -------- -------- --------
+    [TAG]                      |       |        |        |        | Line 6 (11)
+                               -------- -------- -------- --------
+    [TAG]                      |       |        |        |        | Line 7 (11)
+                               -------- -------- -------- --------
+
+Its called as "Set Associative Cache' as each 2-bit pattern is combination of
+2 lines, called a SET. The number of lines in a set will vary depending on the
+number of lines present in the cache.
+
+When the size of a set is big, it becomes a 'fully associative cache'. A 'Fully
+associative cache' is like a very big 'set associative cache'.
+
+As we can see, the number of lines in each set increases/decreases based on 2
+factors,
+(1) The number of bits we choose from a 'block id' for 'Line id'.
+(2) The number of lines we have in the cache.
+
+It is also called a 'k-way set associative cache', where k is the number of
+lines we have in a set. In the above example, it is called a '2-way set
+associative cache'.
