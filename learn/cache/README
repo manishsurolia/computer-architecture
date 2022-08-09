@@ -4,16 +4,16 @@ Below is an hierarchy of memory access (By processor) based on the speed.
                      ---------
 
                          /\
-                        /  \ <---------------- Registers
+                        /  \ <---------------- Registers (Level 1)
                        /    \
                       --------
-                     /        \  <------------- Cache
+                     /        \  <------------- Cache (Level 2)
                     /          \
                    --------------
-                  /              \ <------------ Main Memory
+                  /              \ <------------ Main Memory (Level 3)
                  /                \
                 --------------------
-               /                    \ <--------- Hard Disk.
+               /                    \ <--------- Hard Disk (Level 4)
               /                      \
              --------------------------
 
@@ -21,6 +21,9 @@ Registers are very fast to access, but they can hold only few bytes of data,
 second is 'cache', which is embedded in the CPU chip. Caches are generally
 small, so we need RAM(Main memory) to store our programs while execution and
 then it is Hard disk where the program exists forever.
+
+Note : In most systems, the memory is a true hierarchy, meaning that data
+cannot be present in level 'i' unless it is also present in level 'i+1'.
 
 Here, first we first need to understand the "effective memory access time" from
 the perspective of the processor.
@@ -35,10 +38,15 @@ and does not find it there, it is called a "Cache Miss".
 Miss : Element was not found at that memory level.
 Hit : Element found at the memory level.
 
-Hit Rate : percentage of time, in which, that the element was found.
+Hit Rate : no. of hits / no. of total memory requests
 
-Miss Rate : (1 - Hit Rate), For example, if hit rate is 60% (.60), then the miss
-rate would be (1 - .60) = .40
+Miss Rate : Total rate - Hit Rate
+
+          : ((hit + miss) / total memory requests) - Hit Rate
+
+          : 1 - Hit Rate (Since, 'Hit+Miss' is equal to total memory requests)
+
+          : 1 - Hit Rate
 
 Note: The above maths of 'miss rate' is like we are getting the remaining
 quantity.
