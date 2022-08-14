@@ -1,0 +1,227 @@
+Pipelining : Pipelining is a way of getting improved CPU performance without
+increasing the processor speed.
+
+
+        ---------------------------------------------------------------------
+        |                -------------------                                 |
+        |                |                 |                                 |
+        |                |       ALU       |                                 |
+        |                |                 |                                 |
+        |                -------------------                                 |
+        |                /|\            /|\                                  |
+        |                 |              |                                   |
+        |                 |              |                                   |
+        |                 |              |                                   |
+        |                \|/             |                                   |
+        |    ----------------      ----------------       ----------------   |
+        |    |              |      | Instruction  |       |    Bus       |   |
+        |    |  Registers   |<-----| Decoder      |<------|  Interface   |<----->
+        |    |              |      |              |       |   Unit       |   |
+        |    ----------------      ----------------       ----------------   |
+        |      (3) Execute             (2) Decode              (1) Fetch     |
+        |                                                                    |
+        |                                                                    |
+        ---------------------------------------------------------------------
+                                    CPU
+
+In a CPU, there are 3 major components, which are responsible for instructions
+execution. (1) Fetch (2) Decode (3) Execute
+
+(1) Fetch : Fetch is done by 'Bus Interface Unit', where it fetches the next
+instruction from memory/cache based on the instruction pointer.
+
+(2) Decode : Decoder is done by 'decoder' unit of a CPU, where instruction
+gets decoded.
+
+(3) Execute : This is done by ALU and registers.
+
+Bus interface uses instruction pointer/program counter register to fetch the
+next instruction. Program counter/Instruction pointer are address registers and
+part of the 'registers' section of the CPU, which holds the address of the next
+instruction, that has to be executed. 'Bus Interface Unit' just keeps checking
+these registers, and as soon as these registers gets updated with a new address,
+it fetches the instruction from that address. Actually, It is the role of
+decoder to update the instruction pointer based on the decoded instruction.
+'ALU+registers' do the job of instruction execution.
+
+How Instruction pointer is modified:
+-----------------------------------
+In a fixed length instruction set(Like ARM), all instructions are of size 4
+bytes. Hence, instruction pointer just jumps from one 4-byte boundary(word) to
+the next 4-byte boundary(word) for a program execution. In some other cases,
+jump instructions update the 'Instruction pointer'. For example an if condition
+or for loop..etc.
+
+Let's assume that we have a CPU which does all these steps , fetch, decode and
+execute linearly and CPU takes one cycle to complete it.
+
+Then each instruction will take 3 cycles to complete as each instruction has
+to pass through, fetch, decode and execute.
+
+        -------------------------
+        |   F   |   D   |   E   |
+        -------------------------
+        |<----->|<----->|<----->|
+            1       1       1
+          cycle    cycle   cycle
+
+The total time taken(in cycles) to execute all the instructions is :
+
+    = Total number of instructions * 3 cycles
+    = n * 3 cycles
+
+Let's say if a program has 5 instructions to execute, it will take 5*3 = 15
+cycles to execute complete program, as below,
+
+   Instruction 1  Instruction 2  Instruction 3  Instruction 4  Instruction 5
+ |<------------>|<------------>|<------------>|<------------>|<------------->|
+ ----------------------------------------------------------------------------
+ | F  | D  | E  | F  | D  | E  | F  | D  | E  | F  | D  | E  | F  | D  | E  |
+ ----------------------------------------------------------------------------
+ |<-->|<-->|<-->|<-->|<-->|<-->|<-->|<-->|<-->|<-->|<-->|<-->|<-->|<-->|<-->|
+   1C   1C   1C   1C   1C   1C   1C   1C   1C   1C   1C   1C   1C   1C   1C
+
+The above is a representation of when a processor can do only one thing (from
+fetch, decode and execution) at a time. This is called non-pipelined.
+
+pipelining : When decoder is in the process of decoding, 'Bus Interface Unit'
+can fetch the next instruction and similarly when 'ALU+Regisers' are busy with
+the 'excecution' decoder can get the next instruction from Bus Interface Unit
+and start to decode.
+
+Let's try to visualize this with our example of 5 instructions.
+
+
+
+
+           -------------------------
+      I1   |   F   |   D   |   E   |
+           ---------------------------------
+      I2           |   F   |   D   |   E   |
+                   ---------------------------------
+      I3                   |   F   |   D   |   E   |
+                           ---------------------------------
+      I4                           |   F   |   D   |   E   |
+                                   ---------------------------------
+      I5                                   |   F   |   D   |   E   |
+                                           -------------------------
+
+      ------------------------------------------------------------->Time(cycles)
+               1       2       3        4       5        6       7
+
+
+The above diagram is something like a water pipeline :) . Let's assume we have
+a big water pipeline. First few seconds, pipe just gets filled completely with
+water, after that we continuously get water out of the pipe. When we are getting
+some water from the pipe(at its last end), at the same time, some water is
+getting inserted and moved in the pipe towards its last end.
+
+Same is here in CPU,
+The first few cycles (2 cycles) are used to fill the pipe. After that(starting
+from 3rd cycle), every cycle is completing execution for an instruction. Things
+are happening in parallel here same as a water pipe. When one instruction is in
+'execution' phase, at the same time (same cycle) one instruction is being
+fetched and one instruction is getting decoded. Hence, moving to the last
+end(execution) of the pipeline.
+
+Due to this parallelism in the CPU, after 2 cycles, each new cycle completes
+execution of an instruction.
+
+Hence, time take to execute n instructions is:
+    = 2 + n cycles.
+
+Let's now compare the time taken by non-pipeline and pipeline methods
+
+                Time taken by non-pipelining method
+           =    -----------------------------------
+                  Time taken by pipelining method
+
+               3 * n
+          =   -------
+               2 + n
+
+Because a computer executes billion/million of instructions, lets consider this
+'n' as infinite.
+
+So, with considering 'n' as infinite we can ignore the value 2 because it's like
+time taken by a billion instruction execution is 1 billion cycles + 2 cycles.
+Hence, 2 is ignorable in the whole time taken.
+
+and the calculation becomes like this,
+
+              3 * n
+         =   -------
+               n
+
+         =  3
+
+Hence, non-pipeline takes 3 times to complete the execution of instructions
+compare to a pipelining method in CPU.
+
+In other words, with pipeline method, CPU completes the execution of one
+instruction per cycle.
+
+Note : Similarly, if we break the execution of each instruction into more stages
+(lets say 6 instead of 3), and each stage takes 0.5 cycle, then each .5 cycle,
+one instruction will complete its execution. Only the first time movement in
+first 5 stages will take time to fill the pipe, then every .5 cycle, we will
+have one instruction getting executed. This will make the instruction execution
+faster by 2.
+
+Problem with branches ("Flushing the pipeline"):
+-------------------------------------------------
+
+The problem is branches. Specifically, conditional branches.
+The whole process of fetch, decode and execute multiple instructions depends on
+knowing where the next instruction is. If it is just the next word we need to
+fetch for the next instruction, we are good, every thing works fine in pipeline
+with speed advantage of 3x. Every time we take the next instruction pointer and
+fetch the next instruction from that location.
+
+But sometimes, we don't know what the next address is, until the instruction
+gets executed. For example, branch instructions.
+
+Let's take an example,
+Below is a sample program, where due to our condition in the loop,
+we get a conditional branch, "je".
+
+int main(void)
+{
+    int local = 0;
+    while (1) {
+        local += 1;
+        if (local == 10) {
+            break;
+        }
+    }
+    printf("Local : %d\n", local);
+    return 0;
+}
+
+
+0x555555555151 <main+8>  sub    $0x10,%rsp%rbp)
+0x555555555155 <main+12> movl   $0x0,-0x4(%rbp)
+0x55555555515c <main+19> addl   $0x1,-0x4(%rbp)    n+31>
+0x555555555160 <main+23> cmpl   $0xa,-0x4(%rbp)<main+31>
+0x555555555164 <main+27> je     0x555555555168 <main+31> <-- Jump to '0x555555555168', if value gets 10.
+0x555555555166 <main+29> jmp    0x55555555515c <main+19>
+0x555555555168 <main+31> nop    -0x4(%rbp),%eax
+0x555555555169 <main+32> mov    -0x4(%rbp),%eaxi
+0x55555555516c <main+35> mov    %eax,%esip),%rdi
+0x55555555516e <main+37> lea    0xe8f(%rip),%rdi
+0x555555555175 <main+44> mov    $0x0,%eax55050
+0x55555555517a <main+49> callq  0x555555555050 <printf@plt>
+
+Here, when instruction 'je' is getting executed, we already have next 2
+instructions, "jmp" and "nop" in the pipeline (fetch and decoder stages). But
+when 'je' gets executed, first instruction pointer is updated with the next
+address, and the whole pipeline needs to be "flushed out" (getting rid of
+everything which got loaded in the pipeline) and be filled as per the updated
+instruction pointer. This reduces the performance of the CPU as it adds up delay
+in the execution. Due to this behaviour of CPU, sometimes compiler just make
+copies of the loop instruction block(unrolling a loop), rather than doing
+conditional jumps.
+
+Another example of such branching is 'jump to functions'. Hence, if its a very
+small function, we should consider it making inline or using inline related
+compiler optimization.
